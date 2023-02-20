@@ -8,21 +8,18 @@ fun main(args: Array<String>) {
 
 fun determineMostCalories(fileName : String): Int {
     var currentCalories = 0
-    var mostCalories = 0
-    File(fileName).forEachLine {
-        currentCalories = if (it != "") {
-            currentCalories.plus(it.toInt())
-        } else {
-            mostCalories = checkMostCalories(currentCalories, mostCalories)
-            0
+    val allCalories = mutableListOf<Int>()
+    File(fileName).forEachLine {calorie ->
+        if (calorie == "") {
+            allCalories.add(currentCalories)
+            currentCalories = 0
+            return@forEachLine
         }
+        currentCalories = currentCalories.plus(calorie.toInt())
     }
-    return mostCalories
+    return getMostCalories(allCalories)
 }
 
-fun checkMostCalories(currentCalories : Int, mostCalories: Int): Int {
-    if (currentCalories > mostCalories) {
-        return currentCalories
-    }
-    return mostCalories
+fun getMostCalories(allCalories : MutableList<Int>): Int {
+    return allCalories.maxByOrNull { it }!!
 }

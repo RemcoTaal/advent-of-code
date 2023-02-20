@@ -1,7 +1,6 @@
 package day1.part1
 
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 
 fun main(args: Array<String>) {
     print(determineMostCalories("day1.txt"))

@@ -17,5 +17,9 @@ fun determineTopThree(fileName: String): Int {
             0
         }
     }
+    return getTopThreeCalories(calories)
+}
+
+fun getTopThreeCalories(calories : MutableList<Int>): Int {
     return calories.sortedByDescending { it }.subList(0, 3).sum()
 }

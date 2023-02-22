@@ -21,5 +21,8 @@ fun determineMostCalories(fileName : String): Int {
 }
 
 fun getMostCalories(allCalories : MutableList<Int>): Int {
+    if (allCalories.size == 0) {
+        throw InternalError("Empty array not supported")
+    }
     return allCalories.maxByOrNull { it }!!
 }

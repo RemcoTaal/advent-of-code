@@ -36,9 +36,9 @@ fun getMyTotalScore(fileName: String): Int {
     var myScore = 0
     var theirScore = 0
     File(fileName).forEachLine { round ->
-        val encryptedString = round.split(" ")
-        val theirShape = decryptToShape(encryptedString[0])
-        val expectedResult = decryptToResult(encryptedString[1])
+        val encryptedShapes = round.toCharArray().filter { it != ' '}
+        val theirShape = decryptToShape(encryptedShapes[0])
+        val expectedResult = decryptToResult(encryptedShapes[1])
         val myShape = determineShapeToPlay(theirShape, expectedResult)
         // Play round
         if (didIWin(myShape, theirShape)) {
@@ -55,47 +55,44 @@ fun getMyTotalScore(fileName: String): Int {
     return myScore
 }
 
-fun decryptToShape(encryptedString: String): SHAPE {
-    when (encryptedString) {
-        "A" -> {
-            return SHAPE.ROCK
-        }
+fun decryptToShape(encryptedShape: Char): SHAPE {
+    val encryptedShapeHashMap = HashMap<SHAPE, CharArray>()
+    encryptedShapeHashMap[SHAPE.ROCK] = charArrayOf('A', 'X')
+    encryptedShapeHashMap[SHAPE.PAPER] = charArrayOf('B', 'Y')
+    encryptedShapeHashMap[SHAPE.SCISSORS] = charArrayOf('C', 'Z')
 
-        "B" -> {
-            return SHAPE.PAPER
-        }
-
-        "C" -> {
-            return SHAPE.SCISSORS
+    var decryptedShape: SHAPE? = null
+    for (keyValue in encryptedShapeHashMap) {
+        if (keyValue.value.contains(encryptedShape)) {
+            decryptedShape = keyValue.key
         }
     }
-    throw InternalError("Encrypted string not supported")
+    return decryptedShape ?: throw InternalError("Encrypted shape not supported")
 }
 
-fun decryptToResult(encryptedString: String): RESULT {
-    when (encryptedString) {
-        "Z" -> {
+fun decryptToResult(encryptedChar: Char): RESULT {
+    when (encryptedChar) {
+        'Z' -> {
             return RESULT.WIN
         }
 
-        "Y" -> {
+        'Y' -> {
             return RESULT.DRAW
         }
 
-        "X" -> {
+        'X' -> {
             return RESULT.LOSE
         }
     }
-    throw InternalError("Encrypted string not supported")
+    throw InternalError("Encrypted char not supported")
 }
 
 
 fun didIWin(myShape: SHAPE, theirShape: SHAPE): Boolean {
-    return if (myShape == SHAPE.ROCK && theirShape == SHAPE.SCISSORS) {
-        true
-    } else if (myShape == SHAPE.PAPER && theirShape == SHAPE.ROCK) {
-        true
-    } else myShape == SHAPE.SCISSORS && theirShape == SHAPE.PAPER
+    if (myShape.beats == theirShape) {
+        return true
+    }
+    return false
 }
 
 fun isADraw(myShape: SHAPE, theirShape: SHAPE): Boolean {

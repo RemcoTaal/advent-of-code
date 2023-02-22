@@ -10,18 +10,17 @@ const val WIN_SCORE = 6
 const val DRAW_SCORE = 3
 const val LOSE_SCORE = 0
 
-enum class SHAPES(val score: Int) {
+enum class SHAPE(val score: Int) {
     ROCK(1),
     PAPER(2),
-    SCISSORS(3),
-    UNKNOWN(0)
+    SCISSORS(3)
 }
 
 fun getMyTotalScore(fileName : String): Int {
     var myScore = 0
     var theirScore = 0
     File(fileName).forEachLine { round ->
-        val encryptedShapes = round.split(" ")
+        val encryptedShapes = round.toCharArray().filter { it != ' '}
         val theirShape = decryptToShape(encryptedShapes[0])
         val myShape = decryptToShape(encryptedShapes[1])
 
@@ -39,29 +38,34 @@ fun getMyTotalScore(fileName : String): Int {
     return myScore
 }
 
-fun decryptToShape(encryptedShape: String): SHAPES {
-    when (encryptedShape) {
-        "A", "X" -> {
-            return SHAPES.ROCK
-        }
-        "B", "Y" -> {
-            return SHAPES.PAPER
-        }
-        "C", "Z" -> {
-            return SHAPES.SCISSORS
+fun decryptToShape(encryptedShape: Char): SHAPE {
+    val encryptedShapeHashMap = HashMap<SHAPE, CharArray>()
+    encryptedShapeHashMap[SHAPE.ROCK] = charArrayOf('A', 'X')
+    encryptedShapeHashMap[SHAPE.PAPER] = charArrayOf('B', 'Y')
+    encryptedShapeHashMap[SHAPE.SCISSORS] = charArrayOf('C', 'Z')
+
+    var decryptedShape: SHAPE? = null
+    for (keyValue in encryptedShapeHashMap) {
+        if (keyValue.value.contains(encryptedShape)) {
+            decryptedShape = keyValue.key
         }
     }
-    return SHAPES.UNKNOWN
+
+    if (decryptedShape == null) {
+        throw InternalError("Encrypted shape not supported")
+    }
+
+    return decryptedShape
 }
 
-fun didIWin(myShape: SHAPES, theirShape: SHAPES): Boolean {
-    return if (myShape == SHAPES.ROCK && theirShape == SHAPES.SCISSORS) {
+fun didIWin(myShape: SHAPE, theirShape: SHAPE): Boolean {
+    return if (myShape == SHAPE.ROCK && theirShape == SHAPE.SCISSORS) {
         true
-    } else if(myShape == SHAPES.PAPER && theirShape == SHAPES.ROCK) {
+    } else if(myShape == SHAPE.PAPER && theirShape == SHAPE.ROCK) {
         true
-    } else myShape == SHAPES.SCISSORS && theirShape == SHAPES.PAPER
+    } else myShape == SHAPE.SCISSORS && theirShape == SHAPE.PAPER
 }
 
-fun isADraw(myShape: SHAPES, theirShape: SHAPES): Boolean {
-    return myShape == theirShape
+fun isADraw(myShape: SHAPE, theirShape: SHAPE): Boolean {
+    return myShape.name == theirShape.name
 }

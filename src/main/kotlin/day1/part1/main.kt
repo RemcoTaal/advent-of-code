@@ -10,7 +10,7 @@ fun determineMostCalories(fileName : String): Int {
     var currentCalories = 0
     val allCalories = mutableListOf<Int>()
     File(fileName).forEachLine {calorie ->
-        if (calorie == "") {
+        if (calorie.isBlank()) {
             allCalories.add(currentCalories)
             currentCalories = 0
             return@forEachLine
@@ -21,7 +21,7 @@ fun determineMostCalories(fileName : String): Int {
 }
 
 fun getMostCalories(allCalories : MutableList<Int>): Int {
-    if (allCalories.size == 0) {
+    if (allCalories.isEmpty()) {
         throw InternalError("Empty array not supported")
     }
     return allCalories.maxByOrNull { it }!!

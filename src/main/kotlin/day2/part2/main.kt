@@ -6,19 +6,19 @@ fun main(args: Array<String>) {
     print(getMyTotalScore("day2.txt"))
 }
 
-enum class SHAPE(val score: Int) {
+enum class Shape(val score: Int) {
     ROCK(1),
     PAPER(2),
     SCISSORS(3);
 
-    val beats: SHAPE
+    val beats: Shape
         get() = when (this) {
             ROCK -> SCISSORS
             PAPER -> ROCK
             SCISSORS -> PAPER
         }
 
-    val loses: SHAPE
+    val loses: Shape
         get() = when (this) {
             ROCK -> PAPER
             PAPER -> SCISSORS
@@ -55,13 +55,13 @@ fun getMyTotalScore(fileName: String): Int {
     return myScore
 }
 
-fun decryptToShape(encryptedShape: Char): SHAPE {
-    val encryptedShapeHashMap = HashMap<SHAPE, CharArray>()
-    encryptedShapeHashMap[SHAPE.ROCK] = charArrayOf('A', 'X')
-    encryptedShapeHashMap[SHAPE.PAPER] = charArrayOf('B', 'Y')
-    encryptedShapeHashMap[SHAPE.SCISSORS] = charArrayOf('C', 'Z')
+fun decryptToShape(encryptedShape: Char): Shape {
+    val encryptedShapeHashMap = HashMap<Shape, CharArray>()
+    encryptedShapeHashMap[Shape.ROCK] = charArrayOf('A', 'X')
+    encryptedShapeHashMap[Shape.PAPER] = charArrayOf('B', 'Y')
+    encryptedShapeHashMap[Shape.SCISSORS] = charArrayOf('C', 'Z')
 
-    var decryptedShape: SHAPE? = null
+    var decryptedShape: Shape? = null
     for (keyValue in encryptedShapeHashMap) {
         if (keyValue.value.contains(encryptedShape)) {
             decryptedShape = keyValue.key
@@ -88,18 +88,18 @@ fun decryptToResult(encryptedChar: Char): RESULT {
 }
 
 
-fun didIWin(myShape: SHAPE, theirShape: SHAPE): Boolean {
+fun didIWin(myShape: Shape, theirShape: Shape): Boolean {
     if (myShape.beats == theirShape) {
         return true
     }
     return false
 }
 
-fun isADraw(myShape: SHAPE, theirShape: SHAPE): Boolean {
+fun isADraw(myShape: Shape, theirShape: Shape): Boolean {
     return myShape == theirShape
 }
 
-fun determineShapeToPlay(theirShape: SHAPE, expectedResult: RESULT): SHAPE {
+fun determineShapeToPlay(theirShape: Shape, expectedResult: RESULT): Shape {
     return when (expectedResult) {
         RESULT.WIN -> {
             theirShape.loses

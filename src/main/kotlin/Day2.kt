@@ -25,11 +25,11 @@ class Day2 : Day("day2") {
         LOSE(0)
     }
 
-    override fun executePartOne(): Any {
+    override fun executePartOne(): Int {
         return getMyTotalScorePartOne()
     }
 
-    override fun executePartTwo(): Any {
+    override fun executePartTwo(): Int {
         return getMyTotalScorePartTwo()
     }
 

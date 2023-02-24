@@ -1,11 +1,9 @@
-import java.io.File
-
 class Day1 : Day("day1") {
     private var allCalories = getAllCalories()
-    override fun executePartOne(): Any {
+    override fun executePartOne(): Int {
         return getMostCalories()
     }
-    override fun executePartTwo(): Any {
+    override fun executePartTwo(): Int {
         return getTopThreeCalories()
     }
     private fun getAllCalories(): MutableList<Int> {

@@ -5,14 +5,13 @@ class Day4 : Day("day4") {
     private val IntRange.max
         get() = maxOf(start, endInclusive)
 
-    private infix fun IntRange.fullyContains(o: IntRange) = (max <= o.max && min >= o.min)
+    private infix fun IntRange.fullyContains(o: IntRange) = (min >= o.min && max <= o.max)
 
-
-    override fun executePartOne(): Any {
+    override fun executePartOne(): Int {
         return getFullyContained()
     }
 
-    override fun executePartTwo(): Any {
+    override fun executePartTwo(): Int {
         TODO("Not yet implemented")
     }
 

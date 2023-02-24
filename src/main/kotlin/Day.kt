@@ -7,6 +7,6 @@ abstract class Day(fileName: String) {
         println("Part 1: ${executePartOne()}")
         println("Part 2: ${executePartTwo()}")
     }
-    protected abstract fun executePartOne(): Any
-    protected abstract fun executePartTwo(): Any
+    protected abstract fun executePartOne(): Int
+    protected abstract fun executePartTwo(): Int
 }

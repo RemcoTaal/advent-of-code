@@ -4,11 +4,11 @@ class Day3 : Day("day3") {
     class Group(val badge: ItemType)
     class ItemType(val char: Char, val priority: Int)
 
-    override fun executePartOne(): Any {
+    override fun executePartOne(): Int {
         return getSumOfPriorities()
     }
 
-    override fun executePartTwo(): Any {
+    override fun executePartTwo(): Int {
         return getSumOfGroupBadges()
     }
 

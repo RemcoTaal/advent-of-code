@@ -92,10 +92,7 @@ class Day2 : Day("day2") {
 
 
     private fun didIWin(myShape: Shape, theirShape: Shape): Boolean {
-        if (myShape.beats == theirShape) {
-            return true
-        }
-        return false
+        return myShape.beats == theirShape
     }
 
     private fun isADraw(myShape: Shape, theirShape: Shape): Boolean {

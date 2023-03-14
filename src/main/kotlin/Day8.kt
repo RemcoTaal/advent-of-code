@@ -13,10 +13,8 @@ class Day8 : Day("day8") {
         val topToBottom = grid.content.sortedBy { it.coordinates.x }.chunked(grid.maxY)
         val bottomToTop = topToBottom.map { it.reversed() }
 
-        var visibleTrees = getVisibleTrees(leftToRight) + getVisibleTrees(rightToLeft) + getVisibleTrees(topToBottom) + getVisibleTrees(bottomToTop)
-        visibleTrees = visibleTrees.distinct()
-
-        return visibleTrees.size
+        val visibleTrees = getVisibleTrees(leftToRight) + getVisibleTrees(rightToLeft) + getVisibleTrees(topToBottom) + getVisibleTrees(bottomToTop)
+        return visibleTrees.distinct().size
     }
 
     private fun getVisibleTrees(sortedRows: List<List<Grid.Tree>>): List<Grid.Tree> {
@@ -33,26 +31,28 @@ class Day8 : Day("day8") {
         return visibleTrees
     }
 
+
+
     override fun executePartTwo(): Int {
         return 0
     }
-}
 
-class Grid(val file: File) {
-    val content: List<Tree> = setupGrid()
-    val maxX = content.maxOf { it.coordinates.x } + 1
-    val maxY = content.maxOf { it.coordinates.y } + 1
+    class Grid(val file: File) {
+        val content: List<Tree> = setupGrid()
+        val maxX = content.maxOf { it.coordinates.x } + 1
+        val maxY = content.maxOf { it.coordinates.y } + 1
 
-    private fun setupGrid(): List<Tree> {
-        return file.readLines().flatMapIndexed { y, line ->
-            line.mapIndexed { x, char ->
-                Tree(Character.getNumericValue(char), Coordinates(x, y))
+        private fun setupGrid(): List<Tree> {
+            return file.readLines().flatMapIndexed { y, line ->
+                line.mapIndexed { x, char ->
+                    Tree(Character.getNumericValue(char), Coordinates(x, y))
+                }
             }
         }
-    }
 
-    data class Tree(val value: Int, val coordinates: Coordinates)
-    data class Coordinates(val x: Int, val y: Int)
+        data class Tree(val value: Int, val coordinates: Coordinates)
+        data class Coordinates(val x: Int, val y: Int)
+    }
 }
 
 

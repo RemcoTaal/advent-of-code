@@ -15,18 +15,14 @@ class Day3 : Day("day3") {
             val firstCompartment = rucksack.substring(0, divideInteger).toSet()
             val secondCompartment = rucksack.substring(divideInteger, rucksack.length).toSet()
             val charInBothCompartments = firstCompartment.intersect(secondCompartment).first()
-            getPriorityOfItemTypeOrThrow(charInBothCompartments)
+            itemTypes.getValue(charInBothCompartments)
         }
-    }
-
-    private fun getPriorityOfItemTypeOrThrow(char: Char): Int {
-        return itemTypes[char] ?: throw InternalError("Item type not found")
     }
 
     private fun getSumOfGroupBadges(): Int {
         return file.readLines().chunked(3).sumOf { group ->
             val char = getCharInAllGroupsOrThrow(group[0].toSet(), group[1].toSet(), group[2].toSet())
-            getPriorityOfItemTypeOrThrow(char)
+            itemTypes.getValue(char)
         }
     }
 

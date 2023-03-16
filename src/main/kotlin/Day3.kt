@@ -25,12 +25,12 @@ class Day3 : Day("day3") {
 
     private fun getSumOfGroupBadges(): Int {
         return file.readLines().chunked(3).sumOf { group ->
-            val char = getCharInAllGroups(group[0].toSet(), group[1].toSet(), group[2].toSet())
+            val char = getCharInAllGroupsOrThrow(group[0].toSet(), group[1].toSet(), group[2].toSet())
             getPriorityOfItemTypeOrThrow(char)
         }
     }
 
-    private fun getCharInAllGroups(group1: Set<Char>, group2: Set<Char>, group3: Set<Char>): Char {
+    private fun getCharInAllGroupsOrThrow(group1: Set<Char>, group2: Set<Char>, group3: Set<Char>): Char {
         return group1.intersect(group2).intersect(group3).firstOrNull() ?: throw InternalError("No char in all groups")
     }
 

@@ -46,9 +46,9 @@ class Day5 : Day("day5") {
         crates = crates.toSortedMap()
     }
 
-    private fun getResult(procedure: (amount: Int, fromKey: Int, toKey: Int) -> Unit): List<Char> {
+    private fun getResult(executeProcedure: (amount: Int, fromKey: Int, toKey: Int) -> Unit): List<Char> {
         val topOfEachStack = mutableListOf<Char>()
-        procedures.forEach { procedure(it.first, it.second, it.third) }
+        procedures.forEach { executeProcedure(it.first, it.second, it.third) }
         crates.forEach { topOfEachStack.add(it.value.lastElement()) }
         return topOfEachStack
     }

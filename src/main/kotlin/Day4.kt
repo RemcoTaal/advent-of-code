@@ -10,7 +10,7 @@ class Day4 : Day("day4") {
     private infix fun IntRange.overlaps(o: IntRange): Boolean = (max >= o.min && min <= o.max)
 
     override fun executePartOne(): Int {
-        return getResult { range1, range2 -> return@getResult (range1 fullyContains  range2) || range2 fullyContains  range1 }
+        return getResult { range1, range2 -> return@getResult (range1 fullyContains range2) || range2 fullyContains range1 }
     }
 
     override fun executePartTwo(): Int {
@@ -21,7 +21,7 @@ class Day4 : Day("day4") {
         return file.readLines().sumOf { line ->
             val ranges = line.split(",", "-").map { it.toInt() }
             val range1 = ranges[0]..ranges[1]
-            val range2 = ranges[2]..(ranges[3])
+            val range2 = ranges[2]..ranges[3]
             if (comparison(range1, range2)) 1 else 0 as Int
         }
     }

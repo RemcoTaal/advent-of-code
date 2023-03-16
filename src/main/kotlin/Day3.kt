@@ -1,8 +1,5 @@
 class Day3 : Day("day3") {
-    private val itemTypes: List<ItemType> = getItemTypes(1, 'a', 'z') + getItemTypes(27, 'A', 'Z')
-
-    class Group(val badge: ItemType)
-    class ItemType(val char: Char, val priority: Int)
+    private val itemTypes: Map<Char, Int> = getItemTypes(1, 'a', 'z') + getItemTypes(27, 'A', 'Z')
 
     override fun executePartOne(): Int {
         return getSumOfPriorities()
@@ -13,45 +10,39 @@ class Day3 : Day("day3") {
     }
 
     private fun getSumOfPriorities(): Int {
-        var prioritySum = 0
-        file.forEachLine { rucksack ->
-            val divideInteger = rucksack.length/2
-            val firstCompartment = rucksack.substring(0, divideInteger).toCharArray()
-            val secondCompartment = rucksack.substring(divideInteger, rucksack.length).toCharArray()
-            val charInBothCompartments = firstCompartment.intersect(secondCompartment.toSet()).first().toChar()
-            val itemType = toItemType(charInBothCompartments)
-            prioritySum += itemType.priority
+        return file.readLines().sumOf { rucksack ->
+            val divideInteger = rucksack.length / 2
+            val firstCompartment = rucksack.substring(0, divideInteger).toSet()
+            val secondCompartment = rucksack.substring(divideInteger, rucksack.length).toSet()
+            val charInBothCompartments = firstCompartment.intersect(secondCompartment).first()
+            getPriorityOfItemTypeOrThrow(charInBothCompartments)
         }
-        return prioritySum
+    }
+
+    private fun getPriorityOfItemTypeOrThrow(char: Char): Int {
+        return itemTypes[char] ?: throw InternalError("Item type not found")
     }
 
     private fun getSumOfGroupBadges(): Int {
-        val groups = ArrayList<Group>()
-        file.readLines().windowed(3, 3).forEach { group ->
-            val char = getCharInAllGroups(group[0].toCharArray(), group[1].toCharArray(), group[2].toCharArray())
-            groups.add(Group(toItemType(char)))
+        return file.readLines().chunked(3).sumOf { group ->
+            val char = getCharInAllGroups(group[0].toSet(), group[1].toSet(), group[2].toSet())
+            getPriorityOfItemTypeOrThrow(char)
         }
-        return groups.sumOf { it.badge.priority }
     }
 
-    private fun toItemType(char: Char): ItemType {
-        return itemTypes.firstOrNull { it.char == char } ?: throw InternalError("Unknown char for item type")
+    private fun getCharInAllGroups(group1: Set<Char>, group2: Set<Char>, group3: Set<Char>): Char {
+        return group1.intersect(group2).intersect(group3).firstOrNull() ?: throw InternalError("No char in all groups")
     }
 
-    private fun getCharInAllGroups(group1: CharArray, group2: CharArray, group3: CharArray): Char {
-        return group1.intersect(group2.toSet()).intersect(group3.toSet()).firstOrNull()
-            ?: throw InternalError("No char in all groups")
-    }
-
-    private fun getItemTypes(startPriority: Int, startCharacter: Char, endCharacter: Char): List<ItemType> {
+    private fun getItemTypes(startPriority: Int, startCharacter: Char, endCharacter: Char): HashMap<Char, Int> {
         if (startCharacter > endCharacter) {
-            throw InternalError("startCharacter should be lower then or equal to endCharacter")
+            throw InternalError("startCharacter should be lower then endCharacter")
         }
-        val itemTypes = ArrayList<ItemType>()
+        val itemTypes = HashMap<Char, Int>()
         var currentCharacter = startCharacter
         var currentPriority = startPriority
         while (currentCharacter <= endCharacter) {
-            itemTypes.add(ItemType(currentCharacter, currentPriority))
+            itemTypes[currentCharacter] = currentPriority
             currentCharacter++
             currentPriority++
         }

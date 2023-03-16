@@ -2,21 +2,18 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class Day5 : Day("day5") {
-    companion object {
-        val CRATE_REGEX = """(\[([A-Z])\])""".toRegex()
-        val PROCEDURE_REGEX = """move (\d+) from (\d+) to (\d+)""".toRegex()
-    }
     private lateinit var crates: MutableMap<Int, Stack<Char>>
     private lateinit var procedures: ArrayList<Triple<Int, Int, Int>>
 
     private fun MutableMap<Int, Stack<Char>>.setup(line: String): MutableMap<Int, Stack<Char>> {
         CRATE_REGEX.findAll(line).forEach { crate ->
             val stackIndex = (crate.range.first / 4) + 1
-            val stack  = this.getOrPut(stackIndex) {Stack<Char>()}
+            val stack = this.getOrPut(stackIndex) { Stack<Char>() }
             stack.push(crate.groupValues[2].first())
         }
         return this
     }
+
     private fun List<String>.toTriple(): Triple<Int, Int, Int> {
         return Triple(this[0].toInt(), this[1].toInt(), this[2].toInt())
     }
@@ -28,56 +25,53 @@ class Day5 : Day("day5") {
         return this
     }
 
-    init {
-        initialize()
-    }
-
     override fun executePartOne(): List<Char> {
-        return getResult(false)
+        initialize()
+        return getResult { amount, fromKey, toKey -> moveSingleCrate(amount, fromKey, toKey) }
     }
 
     override fun executePartTwo(): List<Char> {
         initialize()
-        return getResult(true)
+        return getResult { amount, fromKey, toKey -> moveMultipleCratesAtOnce(amount, fromKey, toKey) }
     }
 
     private fun initialize() {
         crates = mutableMapOf()
         procedures = ArrayList()
-        file.readLines().forEach {line ->
-            if(CRATE_REGEX.containsMatchIn(line)) {
-                crates.setup(line)
-            } else {
-                procedures.setup(line)
-            }
+        file.readLines().forEach { line ->
+            if (CRATE_REGEX.containsMatchIn(line)) crates.setup(line) else procedures.setup(line)
         }
 
-        crates.map { it.key to it.value.reverse()}
+        crates.map { it.key to it.value.reverse() }
         crates = crates.toSortedMap()
     }
 
-    private fun getResult(maintainOrder: Boolean): List<Char> {
+    private fun getResult(procedure: (amount: Int, fromKey: Int, toKey: Int) -> Unit): List<Char> {
         val topOfEachStack = mutableListOf<Char>()
-        procedures.forEach { executeProcedure(it.first, it.second, it.third, maintainOrder)}
-        crates.forEach{topOfEachStack.add(it.value.lastElement())}
+        procedures.forEach { procedure(it.first, it.second, it.third) }
+        crates.forEach { topOfEachStack.add(it.value.lastElement()) }
         return topOfEachStack
     }
 
-    private fun executeProcedure(amount: Int, fromKey: Int, toKey: Int, maintainOrder: Boolean) {
-        if (maintainOrder) moveMultipleCrates(amount, fromKey, toKey) else repeat(amount) {this.moveSingleCrate(fromKey, toKey)}
+    private fun moveSingleCrate(times: Int, fromKey: Int, toKey: Int) {
+        repeat(times) {
+            val crateToMove = crates.getValue(fromKey).pop()
+            crates.getValue(toKey).push(crateToMove)
+        }
     }
 
-    private fun moveSingleCrate(fromKey: Int, toKey: Int) {
-        val crateToMove = crates.getValue(fromKey).pop()
-        crates.getValue(toKey).push(crateToMove)
-    }
-
-    private fun moveMultipleCrates(amount: Int, fromKey: Int, toKey: Int) {
+    private fun moveMultipleCratesAtOnce(amount: Int, fromKey: Int, toKey: Int) {
         val cratesToMove = crates.getValue(fromKey).takeLast(amount)
         repeat(cratesToMove.size) { crates.getValue(fromKey).pop() }
         cratesToMove.forEach { crates.getValue(toKey).push(it) }
     }
+
+    companion object {
+        val CRATE_REGEX = """(\[([A-Z])\])""".toRegex()
+        val PROCEDURE_REGEX = """move (\d+) from (\d+) to (\d+)""".toRegex()
+    }
 }
+
 
 
 

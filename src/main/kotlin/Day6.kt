@@ -1,4 +1,11 @@
+import java.nio.CharBuffer
+
 class Day6 : Day("day6") {
+
+    private fun List<Byte>.onlyUnique(): Boolean {
+        return this.size == this.toSet().size
+    }
+
     private fun List<IndexedValue<Char>>.hasOnlyDistinctValues(): Boolean {
         return this.size == this.distinctBy { it.value }.size
     }
@@ -12,7 +19,11 @@ class Day6 : Day("day6") {
     }
 
     private fun getResult(windowSize: Int): Int {
-        return file.readText().withIndex().windowed(windowSize, 1).first{it.hasOnlyDistinctValues()}.last().index + 1
+        val bytes = file.readBytes()
+        bytes.indices.forEach { i ->
+            if (bytes.slice(i until i+windowSize).onlyUnique()) return i+windowSize
+        }
+        throw InternalError("No unique set of size $windowSize found")
     }
 }
 

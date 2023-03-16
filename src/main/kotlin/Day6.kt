@@ -6,10 +6,6 @@ class Day6 : Day("day6") {
         return this.size == this.toSet().size
     }
 
-    private fun List<IndexedValue<Char>>.hasOnlyDistinctValues(): Boolean {
-        return this.size == this.distinctBy { it.value }.size
-    }
-
     override fun executePartOne(): Int {
         return getResult(4)
     }

@@ -10,11 +10,11 @@ class Day4 : Day("day4") {
     private infix fun IntRange.overlaps(o: IntRange): Boolean = (max >= o.min && min <= o.max)
 
     override fun executePartOne(): Int {
-        return getResult { range1, range2 -> return@getResult (range1 fullyContains range2) || range2 fullyContains range1 }
+        return getResult { range1, range2 -> (range1 fullyContains range2) || range2 fullyContains range1 }
     }
 
     override fun executePartTwo(): Int {
-        return getResult { range1, range2 -> return@getResult (range1 overlaps range2) || range2 overlaps range1 }
+        return getResult { range1, range2 -> (range1 overlaps range2) || range2 overlaps range1 }
     }
 
     private fun getResult(comparison: (IntRange, IntRange) -> Boolean): Int {

@@ -1,62 +1,83 @@
+import java.io.File
 import kotlin.math.abs
+
+fun determineDirection(char: Char): Direction {
+    return when (char) {
+        'U' -> Direction.UP
+        'D' -> Direction.DOWN
+        'L' -> Direction.LEFT
+        'R' -> Direction.RIGHT
+        else -> throw InternalError("Unsupported char")
+    }
+}
+
+enum class Direction {
+    UP,
+    DOWN,
+    LEFT,
+    RIGHT
+}
 
 class Day9 : Day("day9") {
     override fun executePartOne(): Any {
-        return getTotalDistinctTailMoves()
+        val rope = Rope(2)
+        rope.move(file)
+        return rope.getTotalUniquePositionsOfTailKnots()
     }
 
     override fun executePartTwo(): Any {
-        TODO("Not yet implemented")
+        val rope = Rope(10)
+        rope.move(file)
+        return rope.getTotalUniquePositionsOfTailKnots()
     }
 
-    private fun getTotalDistinctTailMoves(): Int {
-        val rope = Rope()
-        file.forEachLine { line ->
-            val splitted = line.split(" ")
-            val direction = determineDirection(splitted[0].single())
-            val times = splitted[1].toInt()
-            rope.move(direction, times)
+    class Rope(knots: Int) {
+
+        init {
+            if (knots < 2) throw IllegalArgumentException("A rope needs to have at least 2 knots (1 for head and 1 for tail)")
         }
-        return rope.getTail().getHistoryPositions().distinct().size + 1
-    }
 
-    class Rope {
         private val head: Head = Head(0, 0)
-        private val tail: Tail = Tail(0, 0)
+        private val tail: Tail = Tail(head, knots - 1)
 
-        fun move(direction: Direction, times: Int) {
+        fun move(file: File) {
+            file.forEachLine { line ->
+                val splitted = line.split(" ")
+                val direction = determineDirection(splitted[0].single())
+                val times = splitted[1].toInt()
+                move(direction, times)
+            }
+        }
+
+        private fun move(direction: Direction, times: Int) {
             when (direction) {
                 Direction.UP -> repeat(times) {
                     head.moveUp()
-                    if (tail.needsToMove(head.getCurrentPosition())) tail.moveToPosition(head.getPreviousPosition())
                 }
 
                 Direction.DOWN -> repeat(times) {
                     head.moveDown()
-                    if (tail.needsToMove(head.getCurrentPosition())) tail.moveToPosition(head.getPreviousPosition())
                 }
 
                 Direction.LEFT -> repeat(times) {
                     head.moveLeft()
-                    if (tail.needsToMove(head.getCurrentPosition())) tail.moveToPosition(head.getPreviousPosition())
                 }
 
                 Direction.RIGHT -> repeat(times) {
                     head.moveRight()
-                    if (tail.needsToMove(head.getCurrentPosition())) tail.moveToPosition(head.getPreviousPosition())
                 }
             }
         }
 
-        fun getTail(): Tail {
-            return tail
+        fun getTotalUniquePositionsOfTailKnots(): Int {
+            return tail.knots.flatMap { it.getUniquePositions() }.toSet().size + 1
         }
     }
 
-    open class Part(private var x: Int, private var y: Int) {
+    abstract class Part(var x: Int, var y: Int) {
         private val historyPositions = ArrayList<Position>()
 
-        fun moveToPosition(position: Position) {
+        open fun moveToPosition(position: Position) {
             if (!moveIsAllowed(position)) throw InternalError("Move not allowed")
 
             historyPositions.add(getCurrentPosition())
@@ -72,8 +93,12 @@ class Day9 : Day("day9") {
             return abs(currentPosition.x - moveToPosition.x) <= 1 && abs(currentPosition.y - moveToPosition.y) <= 1
         }
 
-        fun getHistoryPositions(): ArrayList<Position> {
-            return historyPositions
+        fun needsToMove(positionOtherPart: Position): Boolean {
+            return !isNeighborOrSame(positionOtherPart)
+        }
+
+        fun getUniquePositions(): Set<Position> {
+            return historyPositions.toSet()
         }
 
         fun getPreviousPosition(): Position {
@@ -84,22 +109,22 @@ class Day9 : Day("day9") {
             return Position(x, y)
         }
 
-        fun moveUp() {
+        open fun moveUp() {
             historyPositions.add(getCurrentPosition())
             y--
         }
 
-        fun moveDown() {
+        open fun moveDown() {
             historyPositions.add(getCurrentPosition())
             y++
         }
 
-        fun moveLeft() {
+        open fun moveLeft() {
             historyPositions.add(getCurrentPosition())
             x--
         }
 
-        fun moveRight() {
+        open fun moveRight() {
             historyPositions.add(getCurrentPosition())
             x++
         }
@@ -109,30 +134,134 @@ class Day9 : Day("day9") {
         }
 
         data class Position(val x: Int, val y: Int)
-
     }
 
-    class Head(x: Int, y: Int) : Part(x, y)
-    class Tail(x: Int, y: Int) : Part(x, y) {
-        fun needsToMove(positionHead: Position): Boolean {
-            return !isNeighborOrSame(positionHead)
+    class Head(x: Int, y: Int) : Part(x, y), Publisher {
+        private var subscriber: Subscriber? = null
+
+        override fun subscribe(subscriber: Subscriber) {
+            this.subscriber = subscriber
+        }
+
+        override fun unsubscribe(subscriber: Subscriber) {
+            this.subscriber = null
+        }
+
+        override fun notifySubscriber() {
+            this.subscriber?.update(getCurrentPosition(), getPreviousPosition())
+        }
+
+        override fun moveToPosition(position: Position) {
+            super.moveToPosition(position)
+            notifySubscriber()
+        }
+
+        override fun moveUp() {
+            super.moveUp()
+            notifySubscriber()
+        }
+
+        override fun moveDown() {
+            super.moveDown()
+            notifySubscriber()
+        }
+
+        override fun moveLeft() {
+            super.moveLeft()
+            notifySubscriber()
+        }
+
+        override fun moveRight() {
+            super.moveRight()
+            notifySubscriber()
         }
     }
 
-    private fun determineDirection(char: Char): Direction {
-        return when (char) {
-            'U' -> Direction.UP
-            'D' -> Direction.DOWN
-            'L' -> Direction.LEFT
-            'R' -> Direction.RIGHT
-            else -> throw InternalError("Unsupported char")
+    class Tail(val head: Head, private val totalKnots: Int) {
+        val knots = constructKnots()
+
+        private fun constructKnots(): List<Knot> {
+            if (totalKnots <= 0) {
+                throw IllegalArgumentException("Tail needs to have at least 1 knot")
+            }
+
+            val knots = arrayListOf<Knot>()
+            var knot: Knot
+            var index = 0
+            repeat(totalKnots) {
+
+                if (index == 0) {
+                    knot = Knot()
+                    head.subscribe(knot)
+                } else {
+                    val previousKnotIndex = index - 1
+                    val previousKnot = knots[previousKnotIndex]
+                    knot = Knot()
+                    previousKnot.subscribe(knot)
+                    knots[previousKnotIndex] = previousKnot
+                }
+                knots.add(knot)
+                index++
+            }
+            return knots
+        }
+
+        inner class Knot : Part(head.x, head.y), Publisher, Subscriber {
+            private var subscriber: Subscriber? = null
+
+            override fun subscribe(subscriber: Subscriber) {
+                this.subscriber = subscriber
+            }
+
+            override fun unsubscribe(subscriber: Subscriber) {
+                if (subscriber != this.subscriber) return
+                this.subscriber = null
+            }
+
+            override fun notifySubscriber() {
+                this.subscriber?.update(getCurrentPosition(), getPreviousPosition())
+            }
+
+            override fun update(currentPosition: Position, previousPosition: Position) {
+                if (needsToMove(currentPosition)) {
+                    moveToPosition(previousPosition)
+                }
+            }
+
+            override fun moveToPosition(position: Position) {
+                super.moveToPosition(position)
+                notifySubscriber()
+            }
+
+            override fun moveUp() {
+                super.moveUp()
+                notifySubscriber()
+            }
+
+            override fun moveDown() {
+                super.moveDown()
+                notifySubscriber()
+            }
+
+            override fun moveLeft() {
+                super.moveLeft()
+                notifySubscriber()
+            }
+
+            override fun moveRight() {
+                super.moveRight()
+                notifySubscriber()
+            }
         }
     }
 
-    enum class Direction {
-        UP,
-        DOWN,
-        LEFT,
-        RIGHT
+    interface Publisher {
+        fun subscribe(subscriber: Subscriber)
+        fun unsubscribe(subscriber: Subscriber)
+        fun notifySubscriber()
+    }
+
+    interface Subscriber {
+        fun update(currentPosition: Part.Position, previousPosition: Part.Position)
     }
 }

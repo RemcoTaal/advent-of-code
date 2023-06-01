@@ -1,6 +1,30 @@
 import java.io.File
 import kotlin.math.abs
 
+interface Publisher {
+    fun subscribe(subscriber: Subscriber)
+    fun unsubscribe(subscriber: Subscriber)
+    fun notifySubscriber()
+}
+
+interface Subscriber {
+    fun update(currentPositionPublisher: Day9.Knot.Position)
+}
+
+//  The following directions are allowed: ↖ ↑ ↗
+//                                        ← · →
+//                                        ↙ ↓ ↘
+enum class Direction {
+    UP_LEFT,
+    UP,
+    UP_RIGHT,
+    LEFT,
+    RIGHT,
+    DOWN_LEFT,
+    DOWN,
+    DOWN_RIGHT
+}
+
 fun determineDirection(char: Char): Direction {
     return when (char) {
         'U' -> Direction.UP
@@ -11,202 +35,44 @@ fun determineDirection(char: Char): Direction {
     }
 }
 
-enum class Direction {
-    UP,
-    DOWN,
-    LEFT,
-    RIGHT
-}
 
 class Day9 : Day("day9") {
+
     override fun executePartOne(): Any {
         val rope = Rope(2)
-        rope.move(file)
-        return rope.getTotalUniquePositionsOfTailKnots()
+        rope.performMoves(file)
+        return rope.getTotalUniquePositionsOfLastTailKnot()
     }
 
     override fun executePartTwo(): Any {
         val rope = Rope(10)
-        rope.move(file)
-        return rope.getTotalUniquePositionsOfTailKnots()
+        rope.performMoves(file)
+        return rope.getTotalUniquePositionsOfLastTailKnot()
     }
 
-    class Rope(knots: Int) {
+    class Rope(val totalKnots: Int) {
 
         init {
-            if (knots < 2) throw IllegalArgumentException("A rope needs to have at least 2 knots (1 for head and 1 for tail)")
+            check(totalKnots >= 2) { "A rope needs to have at least 2 knots (1 for head and 1 for tail)" }
         }
 
         private val head: Head = Head(0, 0)
-        private val tail: Tail = Tail(head, knots - 1)
+        private val tail: Tail = Tail(head)
 
-        fun move(file: File) {
+        fun performMoves(file: File) {
             file.forEachLine { line ->
                 val splitted = line.split(" ")
                 val direction = determineDirection(splitted[0].single())
                 val times = splitted[1].toInt()
-                move(direction, times)
+                head.move(direction, times)
             }
         }
 
-        private fun move(direction: Direction, times: Int) {
-            when (direction) {
-                Direction.UP -> repeat(times) {
-                    head.moveUp()
-                }
-
-                Direction.DOWN -> repeat(times) {
-                    head.moveDown()
-                }
-
-                Direction.LEFT -> repeat(times) {
-                    head.moveLeft()
-                }
-
-                Direction.RIGHT -> repeat(times) {
-                    head.moveRight()
-                }
-            }
+        fun getTotalUniquePositionsOfLastTailKnot(): Int {
+            return tail.knots.last().getUniquePositions().size + 1
         }
 
-        fun getTotalUniquePositionsOfTailKnots(): Int {
-            return tail.knots.flatMap { it.getUniquePositions() }.toSet().size + 1
-        }
-    }
-
-    abstract class Part(var x: Int, var y: Int) {
-        private val historyPositions = ArrayList<Position>()
-
-        open fun moveToPosition(position: Position) {
-            if (!moveIsAllowed(position)) throw InternalError("Move not allowed")
-
-            historyPositions.add(getCurrentPosition())
-            y = position.y
-            x = position.x
-        }
-
-        // The following moves are allowed: ↖ ↑ ↗
-        // (with a maximum of 1 per move)   ← · →
-        //                                  ↙ ↓ ↘
-        private fun moveIsAllowed(moveToPosition: Position): Boolean {
-            val currentPosition = getCurrentPosition()
-            return abs(currentPosition.x - moveToPosition.x) <= 1 && abs(currentPosition.y - moveToPosition.y) <= 1
-        }
-
-        fun needsToMove(positionOtherPart: Position): Boolean {
-            return !isNeighborOrSame(positionOtherPart)
-        }
-
-        fun getUniquePositions(): Set<Position> {
-            return historyPositions.toSet()
-        }
-
-        fun getPreviousPosition(): Position {
-            return historyPositions.last()
-        }
-
-        fun getCurrentPosition(): Position {
-            return Position(x, y)
-        }
-
-        open fun moveUp() {
-            historyPositions.add(getCurrentPosition())
-            y--
-        }
-
-        open fun moveDown() {
-            historyPositions.add(getCurrentPosition())
-            y++
-        }
-
-        open fun moveLeft() {
-            historyPositions.add(getCurrentPosition())
-            x--
-        }
-
-        open fun moveRight() {
-            historyPositions.add(getCurrentPosition())
-            x++
-        }
-
-        fun isNeighborOrSame(p: Position): Boolean {
-            return abs(x - p.x) in 0..1 && abs(y - p.y) in 0..1
-        }
-
-        data class Position(val x: Int, val y: Int)
-    }
-
-    class Head(x: Int, y: Int) : Part(x, y), Publisher {
-        private var subscriber: Subscriber? = null
-
-        override fun subscribe(subscriber: Subscriber) {
-            this.subscriber = subscriber
-        }
-
-        override fun unsubscribe(subscriber: Subscriber) {
-            this.subscriber = null
-        }
-
-        override fun notifySubscriber() {
-            this.subscriber?.update(getCurrentPosition(), getPreviousPosition())
-        }
-
-        override fun moveToPosition(position: Position) {
-            super.moveToPosition(position)
-            notifySubscriber()
-        }
-
-        override fun moveUp() {
-            super.moveUp()
-            notifySubscriber()
-        }
-
-        override fun moveDown() {
-            super.moveDown()
-            notifySubscriber()
-        }
-
-        override fun moveLeft() {
-            super.moveLeft()
-            notifySubscriber()
-        }
-
-        override fun moveRight() {
-            super.moveRight()
-            notifySubscriber()
-        }
-    }
-
-    class Tail(val head: Head, private val totalKnots: Int) {
-        val knots = constructKnots()
-
-        private fun constructKnots(): List<Knot> {
-            if (totalKnots <= 0) {
-                throw IllegalArgumentException("Tail needs to have at least 1 knot")
-            }
-
-            val knots = arrayListOf<Knot>()
-            var knot: Knot
-            var index = 0
-            repeat(totalKnots) {
-
-                if (index == 0) {
-                    knot = Knot()
-                    head.subscribe(knot)
-                } else {
-                    val previousKnotIndex = index - 1
-                    val previousKnot = knots[previousKnotIndex]
-                    knot = Knot()
-                    previousKnot.subscribe(knot)
-                    knots[previousKnotIndex] = previousKnot
-                }
-                knots.add(knot)
-                index++
-            }
-            return knots
-        }
-
-        inner class Knot : Part(head.x, head.y), Publisher, Subscriber {
+        inner class Head(x: Int, y: Int) : Knot(x, y) {
             private var subscriber: Subscriber? = null
 
             override fun subscribe(subscriber: Subscriber) {
@@ -214,54 +80,203 @@ class Day9 : Day("day9") {
             }
 
             override fun unsubscribe(subscriber: Subscriber) {
-                if (subscriber != this.subscriber) return
                 this.subscriber = null
             }
 
             override fun notifySubscriber() {
-                this.subscriber?.update(getCurrentPosition(), getPreviousPosition())
+                this.subscriber?.update(getCurrentPosition())
             }
+        }
 
-            override fun update(currentPosition: Position, previousPosition: Position) {
-                if (needsToMove(currentPosition)) {
-                    moveToPosition(previousPosition)
+        inner class Tail(val head: Head) {
+            val totalTailKnots = totalKnots - 1
+            val knots = initKnots()
+
+            private fun initKnots(): List<TailKnot> {
+                var knot: TailKnot
+                val knots = ArrayList<TailKnot>()
+
+                var index = 0
+                repeat(totalTailKnots) {
+                    // Subscribe the first TailKnot to the Head of the Rope
+                    if (index == 0) {
+                        knot = TailKnot()
+                        head.subscribe(knot)
+                    }
+                    // Subscribe every other knot to the previous knot in the array
+                    else {
+                        knot = TailKnot()
+                        knots[index - 1].subscribe(knot)
+                    }
+
+                    knots.add(knot)
+                    index++
                 }
+                return knots
             }
 
-            override fun moveToPosition(position: Position) {
-                super.moveToPosition(position)
-                notifySubscriber()
-            }
+            inner class TailKnot : Knot(head.x, head.y), Subscriber {
+                private var subscriber: Subscriber? = null
 
-            override fun moveUp() {
-                super.moveUp()
-                notifySubscriber()
-            }
+                override fun subscribe(subscriber: Subscriber) {
+                    this.subscriber = subscriber
+                }
 
-            override fun moveDown() {
-                super.moveDown()
-                notifySubscriber()
-            }
+                override fun unsubscribe(subscriber: Subscriber) {
+                    if (subscriber != this.subscriber) return
+                    this.subscriber = null
+                }
 
-            override fun moveLeft() {
-                super.moveLeft()
-                notifySubscriber()
-            }
+                override fun notifySubscriber() {
+                    this.subscriber?.update(getCurrentPosition())
+                }
 
-            override fun moveRight() {
-                super.moveRight()
-                notifySubscriber()
+                override fun update(currentPositionPublisher: Position) {
+                    if (!needsToMove(currentPositionPublisher)) return
+
+                    val direction = determineDirectionToMove(currentPositionPublisher)
+                    move(direction)
+                }
             }
         }
     }
 
-    interface Publisher {
-        fun subscribe(subscriber: Subscriber)
-        fun unsubscribe(subscriber: Subscriber)
-        fun notifySubscriber()
-    }
+    abstract class Knot(var x: Int, var y: Int) : Publisher {
+        private val historyPositions = ArrayList<Position>()
 
-    interface Subscriber {
-        fun update(currentPosition: Part.Position, previousPosition: Part.Position)
+        fun move(direction: Direction, times: Int = 1) {
+            if (times < 1) throw IllegalArgumentException("times needs to be >= 1")
+            when (direction) {
+                Direction.UP_LEFT -> repeat(times) {
+                    moveUpLeft()
+                }
+
+                Direction.UP -> repeat(times) {
+                    moveUp()
+                }
+
+                Direction.UP_RIGHT -> repeat(times) {
+                    moveUpRight()
+                }
+
+                Direction.LEFT -> repeat(times) {
+                    moveLeft()
+                }
+
+                Direction.RIGHT -> repeat(times) {
+                    moveRight()
+                }
+
+                Direction.DOWN_LEFT -> repeat(times) {
+                    moveDownLeft()
+                }
+
+                Direction.DOWN -> repeat(times) {
+                    moveDown()
+                }
+
+                Direction.DOWN_RIGHT -> repeat(times) {
+                    moveDownRight()
+                }
+
+            }
+        }
+
+        fun needsToMove(positionOtherPart: Position): Boolean {
+            return !isAdjacentOrSamePosition(positionOtherPart)
+        }
+
+        fun getUniquePositions(): Set<Position> {
+            return historyPositions.toSet()
+        }
+
+        fun getCurrentPosition(): Position {
+            return Position(x, y)
+        }
+
+        private fun moveUpLeft() {
+            historyPositions.add(getCurrentPosition())
+            y++
+            x--
+            notifySubscriber()
+        }
+
+        private fun moveUp() {
+            historyPositions.add(getCurrentPosition())
+            y++
+            notifySubscriber()
+        }
+
+        private fun moveUpRight() {
+            historyPositions.add(getCurrentPosition())
+            y++
+            x++
+            notifySubscriber()
+        }
+
+        private fun moveLeft() {
+            historyPositions.add(getCurrentPosition())
+            x--
+            notifySubscriber()
+        }
+
+        private fun moveRight() {
+            historyPositions.add(getCurrentPosition())
+            x++
+            notifySubscriber()
+        }
+
+        private fun moveDownLeft() {
+            historyPositions.add(getCurrentPosition())
+            y--
+            x--
+            notifySubscriber()
+        }
+
+        private fun moveDown() {
+            historyPositions.add(getCurrentPosition())
+            y--
+            notifySubscriber()
+        }
+
+        private fun moveDownRight() {
+            historyPositions.add(getCurrentPosition())
+            y--
+            x++
+            notifySubscriber()
+        }
+
+        fun determineDirectionToMove(other: Position): Direction {
+            check(!isAdjacentOrSamePosition(other)) { "Part is already adjacent to the other position" }
+
+            return when {
+                // Up
+                other.y > y -> when {
+                    other.x < x -> Direction.UP_LEFT
+                    other.x == x -> Direction.UP
+                    else -> Direction.UP_RIGHT
+                }
+
+                // Left or right
+                other.y == y -> when {
+                    other.x < x -> Direction.LEFT
+                    other.x > x -> Direction.RIGHT
+                    else -> error("")
+                }
+
+                // Down
+                else -> when {
+                    other.x < x -> Direction.DOWN_LEFT
+                    other.x == x -> Direction.DOWN
+                    else -> Direction.DOWN_RIGHT
+                }
+            }
+        }
+
+        private fun isAdjacentOrSamePosition(other: Position): Boolean {
+            return abs(x - other.x) <= 1 && abs(y - other.y) <= 1
+        }
+
+        data class Position(val x: Int, val y: Int)
     }
 }

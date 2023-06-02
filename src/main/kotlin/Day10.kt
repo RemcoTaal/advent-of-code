@@ -1,18 +1,9 @@
 class Day10 : Day("day10") {
-
-    enum class INSTRUCTION {
-        NOOP,
-        ADDX
-    }
-
-    fun signalStrength(cycle: Int, x: Int): Int {
-        return cycle * x
-    }
+    private val cycleWithRegister = mutableMapOf<Int, Int>()
 
     override fun executePartOne(): Int {
-        var x = 1
         var cycle = 0
-        val cyclesWithRegisters = ArrayList<Pair<Int, Int>>()
+        var x = 1
 
         file.forEachLine {
             val line = it.split(" ")
@@ -21,27 +12,53 @@ class Day10 : Day("day10") {
             when (INSTRUCTION.valueOf(instruction.uppercase())) {
                 INSTRUCTION.NOOP -> {
                     cycle++
-                    cyclesWithRegisters.add(Pair(cycle, x))
+                    cycleWithRegister[cycle] = x
                 }
 
                 INSTRUCTION.ADDX -> {
                     val xValue = line[1].toInt()
                     repeat(2) {
                         cycle++
-                        cyclesWithRegisters.add(Pair(cycle, x))
+                        cycleWithRegister[cycle] = x
                     }
                     x += xValue
                 }
             }
         }
 
-        val cycleRanges = IntProgression.fromClosedRange(20, 220, 40)
-        return cyclesWithRegisters
-            .filter { it.first in cycleRanges }
-            .sumOf { signalStrength(it.first, it.second) }
+        val cycleRange = IntProgression.fromClosedRange(20, 220, 40)
+        return cycleWithRegister
+            .entries
+            .filter { it.key in cycleRange }
+            .sumOf { calculateSignalStrength(it.key, it.value) }
     }
 
-    override fun executePartTwo(): Any {
-        TODO("Not yet implemented")
+    override fun executePartTwo(): String {
+        val result = StringBuilder("\n")
+
+        cycleWithRegister
+            .values
+            .chunked(40)
+            .forEach { row ->
+                row.forEachIndexed { index, register ->
+                    val cycle = index + 1
+                    when (cycle) {
+                        in register..register + 2 -> result.append('#')
+                        else -> result.append('.')
+                    }
+                }
+                result.append('\n')
+            }
+
+        return result.toString()
+    }
+
+    private fun calculateSignalStrength(cycle: Int, x: Int): Int {
+        return cycle * x
+    }
+
+    enum class INSTRUCTION {
+        NOOP,
+        ADDX
     }
 }
